@@ -1,69 +1,51 @@
-// Dependencies
-// =============================================================
-var express = require("express");
-var path = require("path");
+const express = require("express");
+const path = require("path");
+const fs = require("fs");
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-// Sets up the Express App
-// =============================================================
-var app = express();
-var PORT = 3000;
-
-// Sets up the Express app to handle data parsing
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+app.use(express.static("public"));
 
-// Star Wars Characters (DATA)
-// =============================================================
-
-
-// Routes
-// =============================================================
-
-// Return Notes page
-app.get("/notes", function(req, res) {
-  return res.sendFile(path.join(__dirname, "./public/notes.html"));
-});
-
-// Return index file
-app.get("*", function(req, res) {
-  return res.sendFile(path.join(__dirname, "./public/index.html"));
-});
-
-// Displays all characters
-app.get("/api/notes", function(req, res) {
-  return res.json(notes);
-});
-
-// Displays a single character, or returns false
-app.get("/api/characters/:character", function(req, res) {
-  var chosen = req.params.character;
-
-  for (var i = 0; i < characters.length; i++) {
-    if (chosen === characters[i].routeName) {
-      return res.json(characters[i]);
-    }
+let noteArray = [
+  {
+    noteTitle: "",
+    noteText: ""
   }
+];
 
-  return res.json(false);
-});
-
-// Create New Characters - takes in JSON input
-app.post("/api/characters", function(req, res) {
-  // req.body hosts is equal to the JSON post sent from the user
-  // This works because of our body parsing middleware
-  var newcharacter = req.body;
-
-  console.log(newcharacter);
-
-  // We then add the json the user sent to the character array
-  characters.push(newcharacter);
-
-  // We then display the JSON to the users
-  res.json(newcharacter);
-});
-
-// Starts the server to begin listening
-// =============================================================
 app.listen(PORT, function() {
-  console.log("App listening on PORT " + PORT);
+  console.log("App listening on PORT: " + PORT);
+});
+
+app.get("/", function(req, res) {
+  res.sendFile(path.join(__dirname, "./public/index.html"));
+});
+
+app.get("/notes", function(req, res) {
+  res.sendFile(path.join(__dirname, "./public/notes.html"));
+});
+
+app.get("*", function(req, res) {
+  res.sendFile(path.join(__dirname, "../public/index.html"));
+});
+
+app.get("/api/notes", function(req, res) {
+  fs.readFile("./db/db.json", "utf8");
+  res.json(noteArray);
+});
+
+app.post("/api/notes", function(req, res) {
+  fs.writeFileSync("./db/db.json", JSON.stringify(req.body), function(err) {
+    if (err) throw err;
+  });
+  noteArray.push(req.body);
+});
+
+app.post("/api/clear", function(req, res) {
+  tableData.length = 0;
+  waitListData.length = 0;
+
+  res.json({ ok: true });
 });
