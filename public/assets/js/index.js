@@ -6,6 +6,7 @@ var $noteList = $(".list-container .list-group");
 
 // activeNote is used to keep track of the note in the textarea
 var activeNote = {};
+let editing = false;
 
 // A function for getting all notes from the db
 var getNotes = function() {
@@ -17,11 +18,19 @@ var getNotes = function() {
 
 // A function for saving a note to the db
 var saveNote = function(note) {
-  return $.ajax({
+  if(editing){
+    return $.ajax({
+      url: '/api/notes',
+      data: {note:note,id:activeNote.id},
+      method: "PUT"
+    })
+  }else{
+    return $.ajax({
     url: "/api/notes",
     data: note,
     method: "POST"
   });
+  }
 };
 
 // A function for deleting a note from the db
@@ -35,8 +44,9 @@ var deleteNote = function(id) {
 // If there is an activeNote, display it, otherwise render empty inputs
 var renderActiveNote = function() {
   $saveNoteBtn.hide();
+  $('.edit-note').show();
 
-  if (activeNote.id) {
+  if (activeNote.id || activeNote.id === 0) {
     $noteTitle.attr("readonly", true);
     $noteText.attr("readonly", true);
     $noteTitle.val(activeNote.title);
@@ -48,6 +58,12 @@ var renderActiveNote = function() {
     $noteText.val("");
   }
 };
+
+$('.edit-note').on('click', function(){
+  $noteTitle.attr("readonly", false);
+    $noteText.attr("readonly", false);
+    editing = true;
+})
 
 // Get the note data from the inputs, save it to the db and update the view
 var handleNoteSave = function() {
@@ -112,7 +128,7 @@ var renderNoteList = function(notes) {
   for (var i = 0; i < notes.length; i++) {
     var note = notes[i];
 
-    var $li = $("<li class='list-group-item'>").data(note);
+    var $li = $("<li class='list-group-item'>").data({...note,id:i});
     var $span = $("<span>").text(note.title);
     var $delBtn = $(
       "<i class='fas fa-trash-alt float-right text-danger delete-note'>"
@@ -128,7 +144,8 @@ var renderNoteList = function(notes) {
 // Gets notes from the db and renders them to the sidebar
 var getAndRenderNotes = function() {
   return getNotes().then(function(data) {
-    renderNoteList(data);
+    console.log(data)
+    renderNoteList(JSON.parse(data));
   });
 };
 

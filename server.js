@@ -21,11 +21,8 @@ app.get("/", function(req, res) {
 });
 
 app.get("/notes", function(req, res) {
+  console.log(req.params.param1);
   res.sendFile(path.join(__dirname, "./public/notes.html"));
-});
-
-app.get("*", function(req, res) {
-  res.sendFile(path.join(__dirname, "./public/index.html"));
 });
 
 /*  • The application should have a `db.json` file on the backend that 
@@ -35,14 +32,13 @@ app.get("*", function(req, res) {
          return all saved notes as JSON. */
 
 app.get("/api/notes", function(req, res) {
-  let dbInfo;
-  res.fs.readFile("./db/db.json", "utf8", function(err, data) {
-    if (err) { console.log("error"); } 
-    else {
-      dbInfo = data
+  fs.readFile("./db/db.json", "utf8", function(err, data) {
+    if (err) {
+      console.log(err);
+    } else {
+      res.json(data);
     }
   });
-  
 });
 
 /*    2. POST `/api/notes` - Should recieve a new note to save 
@@ -50,22 +46,21 @@ app.get("/api/notes", function(req, res) {
          and then return the new note to the client. */
 
 app.post("/api/notes", function(req, res) {
-  
-  let dbInfo;
   fs.readFile("./db/db.json", "utf8", function(err, data) {
-    if (err) { console.log("error"); } 
-    else {
-     data = JSON.parse(data);
-     data.push("TODO")
-     console.log(data)
-      
+    if (err) {
+      console.log("error");
+    } else {
+      const dataArr = JSON.parse(data);
+      dataArr.push(req.body);
+      fs.writeFile("./db/db.json", JSON.stringify(dataArr), err => {
+        if (err) {
+          console.log(err);
+        } else {
+          res.send("ok");
+        }
+      });
     }
-
-  })
-
-//   fs.writeFileSync("./db/db.json", JSON.stringify(req.body), function(err) {
-//     if (err) throw err;
-//   });
+  });
 });
 
 /*    3. DELETE `/api/notes/:id` - Should recieve a query paramter 
@@ -75,9 +70,34 @@ app.post("/api/notes", function(req, res) {
          from the `db.json` file, remove the note with the given `id` property, 
          and then rewrite the notes to the `db.json` file. */
 
-app.post("/api/clear", function(req, res) {
-  tableData.length = 0;
-  waitListData.length = 0;
+app.delete("/api/notes/:id", function(req, res) {
+  fs.readFile("./db/db.json", "utf-8", function(err, data) {
+    const dataArr = JSON.parse(data);
+    dataArr.splice(req.params.id, 1);
+    fs.writeFile("./db/db.json", JSON.stringify(dataArr), err => {
+      if (err) {
+        console.log(err);
+      } else {
+        res.send("great");
+      }
+    });
+  });
+});
 
-  res.json({ ok: true });
+app.put("/api/notes", function(req, res) {
+  console.log(req.body);
+  fs.readFile("./db/db.json", "utf-8", function(err, data) {
+    const dataArr = JSON.parse(data);
+    fs.writeFile("./db/db.json", JSON.stringify(dataArr), err => {
+      if (err) {
+        console.log(err);
+      } else {
+        res.send('ok');
+      }
+    });
+  });
+});
+
+app.get("*", function(req, res) {
+  res.sendFile(path.join(__dirname, "./public/index.html"));
 });
